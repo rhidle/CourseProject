@@ -6,6 +6,9 @@ __pycache__/
 # C extensions
 *.so
 
+# Pyhton files
+ConsOptimization/15minute_data_austin.csv
+
 # Distribution / packaging
 .Python
 build/

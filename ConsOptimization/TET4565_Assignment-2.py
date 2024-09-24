@@ -6,8 +6,6 @@ Created on Fri Oct 21 00:35:59 2022
 """
 
 
-
-
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -166,7 +164,7 @@ def monthly_consumption(temp_df):
     plt.title('Monthly Consumption')
     plt.show()
     
-monthly_consumption(client_data[cl_num])
+# monthly_consumption(client_data[cl_num])
 
 def correlation(temp_df):
     #Find the correlation between total consumption and other features using the corr() function.
@@ -182,7 +180,7 @@ def boxplot(temp_df):
     plt.ylabel('Consumption[kWh]')
     plt.title('Boxplot of Total Consumption and Solar')
     plt.show()
-boxplot(client_data[cl_num])    
+# boxplot(client_data[cl_num])    
 
 def histogram(temp_df):
     # create code for total consumption histogram
@@ -196,7 +194,7 @@ def histogram(temp_df):
     plt.title('Solar Histogram')
     plt.show()
     
-histogram(client_data[cl_num])
+# histogram(client_data[cl_num])
 
 def min_max_avg(temp_df):
    #Find maximum, minimum, and average daily consumption    
@@ -228,178 +226,31 @@ def weekday_weekend(temp_df):
     plt.ylabel('Consumption[kWh]')
     plt.title('Total Consumption per Day of the Week')
     plt.show()
+
+def hourly_consumption(temp_df):
+    # find the hourly consumption for 1.6.2018 and 2.6.2018
+    hourly = temp_df['2018-06-01':'2018-06-02']
+    print(hourly)
+    # Plot it
+    hourly['total_consumption'].plot()
+    plt.xlabel('Hour')
+    plt.ylabel('Consumption[kWh]')
+    plt.title('Hourly Consumption on 1.6.2018 and 2.6.2018')
+    plt.show()
     
 
-min_max_avg(client_data[cl_num])
-weekday_weekend(client_data[cl_num]) 
-
-# #forecasting
-# #arima
-# from statsmodels.tsa.stattools import adfuller
-# from sklearn.metrics import mean_squared_error,mean_absolute_percentage_error,mean_absolute_error
-# from statsmodels.tsa.arima.model import ARIMA
-# from statsmodels.graphics.tsaplots import plot_predict
-# from statsmodels.tsa.stattools import acf, pacf
-# def stationarity(temp_df):
-#     adfuller_test = adfuller(temp_df['total_consumption'])
-#     print(adfuller_test)
-#     #plot acf and pacf
-#     acf_test = acf(temp_df['total_consumption'])
-#     pacf_test = pacf(temp_df['total_consumption'])
-#     plt.plot(acf_test)
-#     plt.plot(pacf_test)
-# stationarity(client_data[cl_num])
-
-# def arima(temp_df):      
-#     temp_df=temp_df.set_index('localminute')
-#     temp_df=temp_df.resample('D').sum()    
-#     cons_series=temp_df['total_consumption']
-#     train_data=np.array(cons_series[0:100])    
-#     test_data=np.array(cons_series[100:110])
-#     # create the arima model and choose appropriate parameters
-#     model = ARIMA(train_data, order=(1,1,1))
-#     # fit the model
-#     model_fit = model.fit()
-#     print(model_fit.summary())
-#     # forecast for next 10 days
-#     forecast = model_fit.forecast(steps=10)
-#     plt.plot(forecast)
-#     plt.plot(test_data)
-#     plt.show()
-#     # calculate mse,mae,mape error metrics
-#     mse = mean_squared_error(test_data, forecast)
-#     mae = mean_absolute_error(test_data, forecast)
-#     mape = mean_absolute_percentage_error(test_data, forecast)
-#     print(mse)
-#     print(mae)
-#     print(mape)
+   
     
-# arima(client_data[cl_num])
-    
-# #linear regression
-# from sklearn.linear_model import LinearRegression
+hourly_consumption(client_data[cl_num])
+# min_max_avg(client_data[cl_num])
+# weekday_weekend(client_data[cl_num]) 
 
-# def lr(temp_df):
-#     # X is input and y is output    
-#     X=np.array(temp_df.iloc[:,5:12])
-#     Y=np.array(temp_df.iloc[:,[4]])    
-#     print(X)
-#     print(Y)    
-#     train_x=X[3:1000]
-#     train_y=Y[3:1000]
-#     test_x=X[1000:1100]
-#     test_y=Y[1000:1100]
-#     #create and fit linear regression model using trainx,trainy
-#     reg = LinearRegression().fit(train_x,train_y)
-#     # calculate reg score and print
-#     print(reg.score(train_x,train_y))
-#     # find coefficients of fitted model
-#     print(reg.coef_)
-#     #predict for the testx
-#     forecast = reg.predict(test_x)
-#     plt.plot(forecast)
-#     plt.plot(test_y)
-#     plt.show()
-#     mse = mean_squared_error(test_y, forecast)
-#     mae = mean_absolute_error(test_y, forecast)
-#     mape = mean_absolute_percentage_error(test_y, forecast)
-#     print(mse)
-#     print(mae)
-#     print(mape)
-    
-    
-# lr(client_data[cl_num])
-
-# from sklearn import svm
-
-# def svm_(temp_df):
-#     # X is input and y is output
-#     X=np.array(temp_df.iloc[:,5:12])
-#     Y=np.array(temp_df.iloc[:,[4]])    
-#     print(X)
-#     print(Y)    
-#     train_x=X[3:1000]
-#     train_y=Y[3:1000]
-#     test_x=X[1000:1100]
-#     test_y=Y[1000:1100]
-#     # create and fit svr model using trainx,trainy
-#     reg = svm.SVR().fit(train_x,train_y)
-#     # forecast for test_x
-#     forecast = reg.predict(test_x)
-#     plt.plot(forecast)
-#     plt.plot(test_y)
-#     plt.show()
-#     mse = mean_squared_error(test_y, forecast)
-#     mae = mean_absolute_error(test_y, forecast)
-#     mape = mean_absolute_percentage_error(test_y, forecast)
-#     print(mse)
-#     print(mae)
-#     print(mape)
-    
-# svm_(client_data[cl_num])   
-
-# from sklearn.neural_network import MLPRegressor
-# from sklearn.model_selection import train_test_split
-# def NN(temp_df):
-#     # X is input and y is output
-#     X=np.array(temp_df.iloc[:,5:12])
-#     Y=np.array(temp_df.iloc[:,[4]]) 
-#     # use split function to split the dataset 
-#     train_x, test_x, train_y, test_y = train_test_split(X, Y, test_size=0.2)
-#     # create mlpregressor model and choose appropriate parameters and fit using trainx trainy.
-#     reg = MLPRegressor(hidden_layer_sizes=(100,100,100), max_iter=1000).fit(train_x,train_y)
-#     # predict for test_x
-#     forecast = reg.predict(test_x)
-#     plt.plot(forecast)
-#     plt.plot(test_y)
-#     plt.show()
-#     mse = mean_squared_error(test_y, forecast)
-#     mae = mean_absolute_error(test_y, forecast)
-#     mape = mean_absolute_percentage_error(test_y, forecast)
-#     print(mse)
-#     print(mae)
-#     print(mape)
-#     # find reg score for test_x and test_y
-#     print(reg.score(test_x,test_y))
-
-# NN(client_data[cl_num])
-
-# #clustering
-# house_cons=np.array([[12991, 7], [12474, 9], [11744, 9], [11097, 8], [12408, 5], [19886, 9], [7360, 5], [6275, 4], [10510, 8], [14864, 9], [17070, 14], [9221, 5], [14288, 8], [11528, 7], [18306, 8], [10706, 5], [11637, 8], [10797, 7], [19266, 10], [7340, 5], [11760, 5], [7930, 4], [7904, 5], [17175, 9], [14765, 14]])
-# from sklearn.cluster import KMeans
-# from sklearn.cluster import DBSCAN
-# from sklearn.preprocessing import MinMaxScaler
-# # scaling the data
-# # give a comment about why scaling is important.
-# # Scaling is important because it makes it easier to compare different data 
-# scaler = MinMaxScaler()
-# house_cons=scaler.fit_transform(house_cons)
-# print(house_cons)
-
-# def k_means(X):
-#     # create kmeans model and choose appropriate parameters
-#     Y = KMeans(n_clusters=3).fit_predict(X)
-#     print(Y)
-#     for t in np.unique(Y):
-#         plt.scatter(X[Y==t, 0], X[Y==t, 1], s=100, label =t)
-#     plt.xlabel('Total_consumption')
-#     plt.xlabel('Max_consumption')
-#     plt.legend()
-#     plt.show()
-
-# k_means(house_cons)
-
-# def dbs(X):
-#     # create dbscan model and choose appropriate parameters
-#     Y = DBSCAN(eps=0.5, min_samples=2).fit_predict(X)
-#     no_clusters = len(np.unique(Y))
-#     for t in np.unique(Y):
-#         plt.scatter(X[Y==t, 0], X[Y==t, 1], s=100, label =t)
-#     print(Y)
-#     plt.xlabel('Total_consumption')
-#     plt.xlabel('Max_consumption')
-#     plt.legend()
-#     plt.show()
-    
-# dbs(house_cons)
-    
+Prices_df = pd.read_csv('Texas_prices.csv', sep=',')
+Prices_df = Prices_df[Prices_df['Zone'] == 'LZ_AEN']
+print(Prices_df)
+def hourly_price(df):
+    df['Price'].plot()
+    plt.xlabel('Hour')
+    plt.ylabel('Price[$/MWh]')
+    plt.title('Hourly Price on 1.6.2018 and 2.6.2018')
+    plt.show()
