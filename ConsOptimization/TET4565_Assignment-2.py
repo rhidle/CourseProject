@@ -248,11 +248,11 @@ hourly_consumption(client_data[cl_num])
 # Save the data to a new csv file
 client_data[cl_num].to_csv('house9_data.csv', sep=',')
 
-# Prices_df = pd.read_csv('Texas_prices_July.csv', sep=',')
-# Prices_df = Prices_df[Prices_df['Zone'] == 'LZ_AEN']
-# Prices_df.index = pd.to_datetime(Prices_df['Date'])
-# Prices_df.to_csv('Prices_July.csv', sep=',')
-# print(Prices_df)
+Prices_df = pd.read_csv('Raw_price_data/Texas_prices_June.csv', sep=',')
+Prices_df = Prices_df[Prices_df['Zone'] == 'LZ_AEN']
+Prices_df.index = pd.to_datetime(Prices_df['Date'])
+Prices_df.to_csv('Prices_July.csv', sep=',')
+print(Prices_df)
 
 def hourly_price(df):
     df['Price'].plot()
