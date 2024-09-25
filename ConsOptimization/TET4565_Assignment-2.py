@@ -83,7 +83,7 @@ def check_timestamp(temp_df):
 def sum_data(temp_df):
     # sum the values of grid solar and solar 2 row wise and assign it to the column total consumption.
     total = temp_df['grid']+temp_df['solar']+temp_df['solar2']
-    temp_df['total_consumption']=total    
+    temp_df['total_consumption'] = total    
     return temp_df
 
 def check_negative_consumption(temp_df):
@@ -93,7 +93,7 @@ def check_negative_consumption(temp_df):
     
 def resample_data(temp_df):
     # resample the data to 60 minute frequency using resample function and use mean method    
-    temp_df = temp_df.resample('60min').mean()
+    temp_df = temp_df.resample('60min').mean().round(4)
     print(temp_df)       
     return temp_df
 
@@ -229,7 +229,7 @@ def weekday_weekend(temp_df):
 
 def hourly_consumption(temp_df):
     # find the hourly consumption for 1.6.2018 and 2.6.2018
-    hourly = temp_df['2018-06-01':'2018-06-02']
+    hourly = temp_df['2018-06-01':'2018-06-03']
     print(hourly)
     # Plot it
     hourly['total_consumption'].plot()
@@ -245,12 +245,20 @@ hourly_consumption(client_data[cl_num])
 # min_max_avg(client_data[cl_num])
 # weekday_weekend(client_data[cl_num]) 
 
-Prices_df = pd.read_csv('Texas_prices.csv', sep=',')
-Prices_df = Prices_df[Prices_df['Zone'] == 'LZ_AEN']
-print(Prices_df)
+# Save the data to a new csv file
+client_data[cl_num].to_csv('house9_data.csv', sep=',')
+
+# Prices_df = pd.read_csv('Texas_prices_July.csv', sep=',')
+# Prices_df = Prices_df[Prices_df['Zone'] == 'LZ_AEN']
+# Prices_df.index = pd.to_datetime(Prices_df['Date'])
+# Prices_df.to_csv('Prices_July.csv', sep=',')
+# print(Prices_df)
+
 def hourly_price(df):
     df['Price'].plot()
     plt.xlabel('Hour')
     plt.ylabel('Price[$/MWh]')
     plt.title('Hourly Price on 1.6.2018 and 2.6.2018')
     plt.show()
+
+hourly_price(Prices_df)
