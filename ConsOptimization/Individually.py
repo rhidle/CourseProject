@@ -24,13 +24,6 @@ def Problem(s):
     3 : pd.read_csv('Prices_August.csv')['Price'] / 1000 # Scenario 3: August prices for 48 hours $/kWh
     }
 
-    # Probability of each scenario
-    pi = {
-    1 : 0.4, 
-    2 : 0.3, 
-    3 : 0.3 
-    }
-
     # Create a Pyomo model
     model = pyo.ConcreteModel()
 

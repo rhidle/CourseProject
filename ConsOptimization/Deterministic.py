@@ -3,7 +3,10 @@ import numpy as np
 import pyomo.environ as pyo
 
 T = range(48) # Time periods
+T1 = range(24) # Time periods for stage 1
+T2 = range(24, 48) # Time periods for stage 2
 S = range(1,4) # Scenarios
+
 
 # Parameters
 P_EV_max = 7.0  # Maximum EV charging power (kW)
@@ -16,11 +19,19 @@ P_house['Consumption'] = P_house_all['total_consumption']['2018-06-01':'2018-06-
 P_house.reset_index(drop=True, inplace=True)
 P_house = P_house['Consumption'].to_dict()
 
+# Scenario-specific electricity prices for the first 24 hours ($/kWh)
+p1s = {
+    1 : pd.read_csv('Prices_June.csv')['Price'][:24] / 1000,  # Assuming prices are in $/MWh
+    2 : pd.read_csv('Prices_July.csv')['Price'][:24] / 1000,  # Assuming prices are in $/MWh
+    3 : pd.read_csv('Prices_August.csv')['Price'][:24] / 1000  # Assuming prices are in $/MWh
+}
 
-p ={
-1 : pd.read_csv('Prices_June.csv')['Price'] / 1000, # Scenario 1: June prices for 48 hours $/kWh
-2 : pd.read_csv('Prices_July.csv')['Price'] / 1000, # Scenario 2: July prices for 48 hours $/kWh
-3 : pd.read_csv('Prices_August.csv')['Price'] / 1000 # Scenario 3: August prices for 48 hours $/kWh
+
+# Scenario-specific electricity prices for the last 24 hours ($/kWh)
+p2s ={
+1 : pd.read_csv('Prices_June.csv')['Price'][24:48] / 1000, # Scenario 1: June prices for 48 hours $/kWh
+2 : pd.read_csv('Prices_July.csv')['Price'][24:48] / 1000, # Scenario 2: July prices for 48 hours $/kWh
+3 : pd.read_csv('Prices_August.csv')['Price'][24:48] / 1000 # Scenario 3: August prices for 48 hours $/kWh
 }
 
 # Probability of each scenario
@@ -31,7 +42,8 @@ pi = {
 }
 
 #### Using the expected values for each scenario ####
-P = sum(pi[s]*p[s] for s in S).round(4).to_dict()
+p1 = sum(pi[s]*p1s[s] for s in S).round(4).to_dict()
+p2 = sum(pi[s]*p2s[s] for s in S).round(4).to_dict()
 
 # Create a Pyomo model
 model = pyo.ConcreteModel()
@@ -43,7 +55,9 @@ model.T = pyo.Set(initialize=T)
 model.P_EV = pyo.Var(T, domain=pyo.NonNegativeReals) # EV charging power (kW)
 
 # Objective function
-model.obj = pyo.Objective(expr=sum(P[t]*(model.P_EV[t] + P_house[t]) for t in T), sense=pyo.minimize)
+def Objective_rule(model):
+    return sum(p1[t]*(model.P_EV[t] + P_house[t]) for t in T1) + sum(p2[t]*(model.P_EV[t] + P_house[t]) for t in T2)
+model.obj = pyo.Objective(rule = Objective_rule, sense = pyo.minimize)
 
 # Constraints
 
