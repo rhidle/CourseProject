@@ -6,6 +6,8 @@ import pyomo.environ as pyo
 S = range(1,4) # Scenarios
 def Problem(s):
     T = range(48) # Time periods
+    T1 = range(24) # Time periods for stage 1
+    T2 = range(24, 48) # Time periods for stage 2
     # Parameters
     P_EV_max = 7.0  # Maximum EV charging power (kW)
     E_EV_required = 50.0  # Total energy required by the EV (kWh)
@@ -17,37 +19,64 @@ def Problem(s):
     P_house.reset_index(drop=True, inplace=True)
     P_house = P_house['Consumption'].to_dict()
 
+    p1 = pd.read_csv('Prices_June.csv')['Price'][:24] / 1000  # Prices in $/kWh
+    p1 = p1.to_dict()
 
-    p ={
-    1 : pd.read_csv('Prices_June.csv')['Price'] / 1000, # Scenario 1: June prices for 48 hours $/kWh
-    2 : pd.read_csv('Prices_July.csv')['Price'] / 1000, # Scenario 2: July prices for 48 hours $/kWh
-    3 : pd.read_csv('Prices_August.csv')['Price'] / 1000 # Scenario 3: August prices for 48 hours $/kWh
+    p2s ={
+    1 : pd.read_csv('Prices_June.csv')['Price'][24:48] / 1000, # Scenario 1: June prices for 48 hours $/kWh
+    2 : pd.read_csv('Prices_July.csv')['Price'][24:48] / 1000, # Scenario 2: July prices for 48 hours $/kWh
+    3 : pd.read_csv('Prices_August.csv')['Price'][24:48] / 1000 # Scenario 3: August prices for 48 hours $/kWh
     }
-
+    p2 = p2s[s].to_dict()
     # Create a Pyomo model
     model = pyo.ConcreteModel()
 
     # Define sets
     model.T = pyo.Set(initialize=T)
+    model.T1 = pyo.Set(initialize=T1)
+    model.T2 = pyo.Set(initialize=T2)
 
     # Variables
-    model.P_EV = pyo.Var(T, domain=pyo.NonNegativeReals) # EV charging power (kW)
+    model.P_EV_1 = pyo.Var(T1, domain=pyo.NonNegativeReals) # EV charging power stage 1 (kW)
+    model.P_EV_2 = pyo.Var(T2, domain=pyo.NonNegativeReals) # EV charging power stage 2 (kW)
 
     # Objective function
-    model.obj = pyo.Objective(expr=sum(p[s][t]*(model.P_EV[t] + P_house[t]) for t in T), sense=pyo.minimize)
+    def Objective_rule(model):
+        # First-stage cost
+        first_stage_cost = sum(
+            p1[t] * (model.P_EV_1[t] + P_house[t])
+            for t in model.T1
+        )
+        # Expected second-stage cost
+        second_stage_cost = sum(
+            p2[t] * (model.P_EV_2[t] + P_house[t])
+            for t in model.T2
+        )
+        return first_stage_cost + second_stage_cost
+
+    model.obj = pyo.Objective(rule = Objective_rule, sense=pyo.minimize)
 
     # Constraints
 
     # EV Requirement Constraint
     def EV_Requirement_rule(model):
-        return sum(model.P_EV[t] for t in T) == E_EV_required
+        first_stage_energy = sum(model.P_EV_1[t] for t in model.T1)
+        second_stage_energy = sum(model.P_EV_2[t] for t in model.T2)
+        return first_stage_energy + second_stage_energy == E_EV_required
+    
     model.EV_Requirement = pyo.Constraint(rule=EV_Requirement_rule)
 
     # Maximum EV Charging Power Constraint
-    def Max_EV_Power_rule(model, t):
-        return model.P_EV[t] <= P_EV_max
-    model.Max_EV_Power = pyo.Constraint(T, rule=Max_EV_Power_rule)
+    def Max_EV_Power_FirstStage_rule(model, t):
+        return model.P_EV_1[t] <= P_EV_max
 
+    model.Max_EV_Power_FirstStage = pyo.Constraint(model.T1, rule=Max_EV_Power_FirstStage_rule)
+
+    def Max_EV_Power_SecondStage_rule(model, t):
+     return model.P_EV_2[t] <= P_EV_max
+
+    model.Max_EV_Power_SecondStage = pyo.Constraint(model.T2, rule=Max_EV_Power_SecondStage_rule)
+    
     # Solve the model
     opt = pyo.SolverFactory('gurobi')
     model.dual = pyo.Suffix(direction=pyo.Suffix.IMPORT)

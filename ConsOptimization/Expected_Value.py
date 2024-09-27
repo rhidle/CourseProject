@@ -20,11 +20,7 @@ P_house.reset_index(drop=True, inplace=True)
 P_house = P_house['Consumption'].to_dict()
 
 # Scenario-specific electricity prices for the first 24 hours ($/kWh)
-p1s = {
-    1 : pd.read_csv('Prices_June.csv')['Price'][:24] / 1000,  # Assuming prices are in $/MWh
-    2 : pd.read_csv('Prices_July.csv')['Price'][:24] / 1000,  # Assuming prices are in $/MWh
-    3 : pd.read_csv('Prices_August.csv')['Price'][:24] / 1000  # Assuming prices are in $/MWh
-}
+p1 = pd.read_csv('Prices_June.csv')['Price'][:24] / 1000  # Assuming prices are in $/MWh
 
 
 # Scenario-specific electricity prices for the last 24 hours ($/kWh)
@@ -42,7 +38,7 @@ pi = {
 }
 
 #### Using the expected values for each scenario ####
-p1 = sum(pi[s]*p1s[s] for s in S).round(4).to_dict()
+p1 = p1.to_dict()
 p2 = sum(pi[s]*p2s[s] for s in S).round(4).to_dict()
 
 # Create a Pyomo model
