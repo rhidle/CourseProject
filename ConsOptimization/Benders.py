@@ -46,6 +46,8 @@ def Obj_1st(m):
     return sum(m.p1[t]*(m.P_house1[t]+m.P_EV[t]) for t in m.T1) + m.alpha
 def ChargeLimit(m,t):
     return m.P_EV[t] <= m.P_EV_max
+def ChargeRequirement1(m):
+    return sum(m.P_EV[t] for t in m.T1) <= m.E_EV_req
 def CreateCuts(m,c):
     return(m.alpha >= m.Phi[c] + m.Lambda[c]*(sum(m.P_EV[t] for t in m.T1) - m.x_hat[c]))
 
@@ -94,6 +96,7 @@ def ModelSetUp_1st(T1, p1, P_house1, Cuts):
     
     """Constraints"""
     m.ChargeLimit = pyo.Constraint(m.T1,rule=ChargeLimit)
+    m.ChargeRequirement1 = pyo.Constraint(rule=ChargeRequirement1)
     
     # Define objective function
     m.obj = pyo.Objective(rule=Obj_1st, sense=pyo.minimize)
@@ -166,7 +169,7 @@ Cuts["Lambda"] = {}
 Cuts["x_hat"] = {}
 
 #This is the while-loop in principle, but for this case is only a for-loop
-for i in range(10):
+for i in range(20):
     print("Start iteration",i)
     #Solve 1st stage problem
     m_1st = ModelSetUp_1st(T1,p1,P_house1,Cuts)
@@ -179,9 +182,7 @@ for i in range(10):
     #Print results 1st stage
     print("Iteration",i)
     print(X_hat)
-    
-    print('Input')
-    input()
+
     print('Setting up 2nd stage')
     #Setup and solve 2nd stage problem
     second_stage_costs = {}
@@ -189,12 +190,13 @@ for i in range(10):
 
     m_2nd = ModelSetUp_2nd(p2s, S, T1, T2, pi, P_house2, X_hat)
     Solve(m_2nd)
-    # second_stage_cost = pyo.value(m_2nd.obj)
+
     # Collect dual values for each scenario
     dual_values = {}
     for s in S:
         dual_values[s] = m_2nd.dual[m_2nd.ChargeRequirement[s]]
-    dual_value = - sum(pi[s]*dual_values[s] for s in S)
+        print(f"Scenario {s}: dual value = {dual_values[s]}")
+    dual_value = - sum(dual_values[s] for s in S)
 
     # # Should it be m.ChargeLimit[t] or m_2nd.Chargerequirement?
     expected_second_stage_cost = pyo.value(m_2nd.obj)
@@ -215,3 +217,13 @@ for i in range(10):
     #We perform a convergence check
     print("UB:",pyo.value(m_2nd.obj),"- LB:",pyo.value(m_1st.alpha.value))
    
+print("End of iterations \n Final results")
+for t in T1:
+    print(f"Hour {t}: P_EV = {pyo.value(m_1st.P_EV[t])} kW")
+print("Objective function:",pyo.value(m_1st.obj))
+
+print("Hour ; Scenario 1 ; Scenario 2 ; Scenario 3")
+for t in T2:
+    print(f"Hour {t}; {pyo.value(m_2nd.P_EV[1,t])} ; {pyo.value(m_2nd.P_EV[2,t])} ; {pyo.value(m_2nd.P_EV[3,t])}")
+
+print("Objective function:",pyo.value(m_2nd.obj)+pyo.value(m_1st.obj)-m_1st.alpha.value)
