@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 import pyomo.environ as pyo
+from pyomo.opt import SolverFactory
 
 T = range(48) # Time periods
 T1 = range(24) # Time periods for stage 1
@@ -11,13 +13,6 @@ S = range(1,4) # Scenarios
 # Parameters
 P_EV_max = 7.0  # Maximum EV charging power (kW)
 E_EV_required = 50.0  # Total energy required by the EV (kWh)
-
-P_house = pd.DataFrame() # Consumption data for 48 hours
-P_house_all = pd.read_csv('house9_data.csv', index_col=0)
-P_house['Consumption'] = P_house_all['total_consumption']['2018-06-01':'2018-06-03']
-# P_house.index = pd.to_datetime(P_house_all['2018-06-01':'2018-06-03'].index)
-P_house.reset_index(drop=True, inplace=True)
-P_house = P_house['Consumption'].to_dict()
 
 # Scenario-specific electricity prices for the first 24 hours ($/kWh)
 p1 = pd.read_csv('Prices_June.csv')['Price'][:24] / 1000  # Assuming prices are in $/MWh
@@ -52,7 +47,7 @@ model.P_EV = pyo.Var(T, domain=pyo.NonNegativeReals) # EV charging power (kW)
 
 # Objective function
 def Objective_rule(model):
-    return sum(p1[t]*(model.P_EV[t] + P_house[t]) for t in T1) + sum(p2[t]*(model.P_EV[t] + P_house[t]) for t in T2)
+    return sum(p1[t]*(model.P_EV[t]) for t in T1) + sum(p2[t]*(model.P_EV[t]) for t in T2)
 model.obj = pyo.Objective(rule = Objective_rule, sense = pyo.minimize)
 
 # Constraints
@@ -67,8 +62,50 @@ def Max_EV_Power_rule(model, t):
     return model.P_EV[t] <= P_EV_max
 model.Max_EV_Power = pyo.Constraint(T, rule=Max_EV_Power_rule)
 
+def Solve(m):
+    opt = SolverFactory("gurobi")
+    m.dual = pyo.Suffix(direction=pyo.Suffix.IMPORT)
+    results = opt.solve(m, load_solutions=True)
+    return results, m
+def DisplayResults(m):
+    return print(m.display(), m.dual.display())
+
 # Solve the model
-opt = pyo.SolverFactory('gurobi')
-model.dual = pyo.Suffix(direction=pyo.Suffix.IMPORT)
-results = opt.solve(model, load_solutions=True)
-print(model.display(), model.dual.display())
+Solve(model)
+DisplayResults(model)
+
+hour = pd.read_csv('Prices_June.csv')['Date'][:48]
+hour = pd.to_datetime(hour)
+hour = hour.dt.hour.to_list()
+
+Charge = [model.P_EV[t]() for t in T]
+plt.bar(range(24), Charge[:24], color='b', edgecolor='black', linewidth=1)
+plt.xticks(range(24), hour[:24])
+plt.xlabel('Hour')
+plt.ylabel('EV Charging Power (KWh)')
+plt.title('Hourly EV Charging Power for Day 1')
+plt.show()
+
+plt.bar(range(24), Charge[24:48], color='b', edgecolor='black', linewidth=1)
+plt.xticks(range(24), hour[:24])
+plt.xlabel('Hour')
+plt.ylabel('EV Charging Power (KWh)')
+plt.title('Hourly EV Charging Power for Day 2')
+plt.show()
+
+
+fig, ax1 = plt.subplots()
+ax1.bar(range(24), Charge[24:48], color='g', label='Y1 Data')  # 'g-' sets the line color to green
+ax1.set_xlabel('Hour')
+ax1.set_ylabel('EV Charging Power (KWh)', color='g')
+ax1.tick_params(axis='y', labelcolor='g')
+
+# Create the second y-axis sharing the same x-axis
+ax2 = ax1.twinx()
+p2_cent = [value * 100 for value in p2.values()]
+ax2.plot(range(24), p2_cent, 'b-', label='Y2 Data')  # 'b-' sets the line color to blue
+ax2.set_ylabel('¢/KWh', color='b')
+ax2.tick_params(axis='y', labelcolor='b')
+
+fig.tight_layout()  # Ensures the layout fits well
+plt.show()

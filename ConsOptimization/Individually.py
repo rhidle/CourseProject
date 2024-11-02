@@ -12,12 +12,6 @@ def Problem(s):
     P_EV_max = 7.0  # Maximum EV charging power (kW)
     E_EV_required = 50.0  # Total energy required by the EV (kWh)
 
-    P_house = pd.DataFrame() # Consumption data for 48 hours
-    P_house_all = pd.read_csv('house9_data.csv', index_col=0)
-    P_house['Consumption'] = P_house_all['total_consumption']['2018-06-01':'2018-06-03']
-    # P_house.index = pd.to_datetime(P_house_all['2018-06-01':'2018-06-03'].index)
-    P_house.reset_index(drop=True, inplace=True)
-    P_house = P_house['Consumption'].to_dict()
 
     p1 = pd.read_csv('Prices_June.csv')['Price'][:24] / 1000  # Prices in $/kWh
     p1 = p1.to_dict()
@@ -44,12 +38,12 @@ def Problem(s):
     def Objective_rule(model):
         # First-stage cost
         first_stage_cost = sum(
-            p1[t] * (model.P_EV_1[t] + P_house[t])
+            p1[t] * (model.P_EV_1[t])
             for t in model.T1
         )
         # Expected second-stage cost
         second_stage_cost = sum(
-            p2[t] * (model.P_EV_2[t] + P_house[t])
+            p2[t] * (model.P_EV_2[t])
             for t in model.T2
         )
         return first_stage_cost + second_stage_cost
@@ -84,5 +78,6 @@ def Problem(s):
     print(f'Scenario {s}')
     print(model.display(), model.dual.display())
 
-for s in S:
-    Problem(s)
+# for s in S:
+#     Problem(s)
+Problem(1)

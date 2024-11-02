@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 import pyomo.environ as pyo
 
 T = range(48) # Time periods
@@ -104,3 +105,44 @@ for s in model.S:
     print(f"\nScenario {s}:")
     for t in model.T2:
         print(f"  Hour {t}: P_EV = {pyo.value(model.P_EV_2[s, t])} kW")
+
+hour = pd.read_csv('Prices_June.csv')['Date'][:48]
+hour = pd.to_datetime(hour)
+hour = hour.dt.hour.to_list()
+
+Charge = [pyo.value(model.P_EV_1[t]) for t in model.T1]
+
+# Create figure and plot on the first y-axis
+fig, ax1 = plt.subplots()
+ax1.bar(range(24), Charge[:24], color='g', label='Y1 Data')  # 'g-' sets the line color to green
+ax1.set_xlabel('Hour')
+ax1.set_ylabel('EV Charging Power (KWh)', color='g')
+ax1.tick_params(axis='y', labelcolor='g')
+
+# Create the second y-axis sharing the same x-axis
+ax2 = ax1.twinx()
+p1_cent = [value * 100 for value in p1.values()]
+ax2.plot(range(24), p1_cent, 'b-', label='Y2 Data')  # 'b-' sets the line color to blue
+ax2.set_ylabel('¢/KWh', color='b')
+ax2.tick_params(axis='y', labelcolor='b')
+
+fig.tight_layout()  # Ensures the layout fits well
+plt.show()
+
+for s in model.S:
+    Charge = [pyo.value(model.P_EV_2[s, t]) for t in model.T2]
+    fig, ax1 = plt.subplots()
+    ax1.bar(range(24), Charge, color='g', label='Y1 Data')  # 'g-' sets the line color to green
+    ax1.set_xlabel('Hour')
+    ax1.set_ylabel('EV Charging Power (KWh)', color='g')
+    ax1.tick_params(axis='y', labelcolor='g')
+
+    # Create the second y-axis sharing the same x-axis
+    ax2 = ax1.twinx()
+    p2_cent = [value * 100 for value in p2s[s].values()]
+    ax2.plot(range(24), p2_cent, 'b-', label='Y2 Data')  # 'b-' sets the line color to blue
+    ax2.set_ylabel('¢/KWh', color='b')
+    ax2.tick_params(axis='y', labelcolor='b')
+
+    fig.tight_layout()  # Ensures the layout fits well
+    plt.show()
